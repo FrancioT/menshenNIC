@@ -1,13 +1,9 @@
 # Menshen port on the OpenNIC platform
-This projects consists on the port of [Menshen](https://github.com/multitenancy-project/menshen), an hardware library for an High-Speed Programmable Packet-Processing Pipeline, on AMD's [OpenNIC](https://github.com/Xilinx/open-nic-shell) platform, which is an open-source FPGA-based NIC.
-In order to replicate the results obtained in this repository, use the same menshen and open-nic versions:
-- for menshen checkout at the commit *fc968bf28626c8f8a610592749a8b2542f0c1f0f*
-- for open-nic checkout at the commit *80777515c83cc04d8497522669aa82dd914d1e08*
-
+This projects consists in the parametrization of the [Menshen](https://github.com/multitenancy-project/menshen) pipeline, an hardware library for an High-Speed Programmable Packet-Processing Pipeline, and the integration of multiple instances of different lenght (number of stages) in an AMD's [OpenNIC](https://github.com/Xilinx/open-nic-shell) platform, which is an open-source FPGA-based NIC.
 
 You can read Menshen's paper and learn about the project [here](https://www.usenix.org/system/files/nsdi22-paper-wang_tao.pdf).
 
-The porting consists in the development of an OpenNIC 250MHz user plugin box (see OpenNIC's architecture) that wraps Menshen's pipeline inside. The project also comes with the testbenches to verify that all of the pipeline features properly work.
+The integration consists in the development of an OpenNIC 250MHz user plugin box (see OpenNIC's architecture) that wraps Menshen's pipeline inside. The project also comes with the testbenches to verify that all of the pipeline features properly work.
 ## Directory structure
  ```sh
 menshen-open-nic/
@@ -48,3 +44,6 @@ The build process consists on running a script that will clone the OpenNIC and M
 ## Sidenotes
 The port has only been built and tested on an Alveo U55C board, therefore support on other Alveo boards isn't guaranteed.
 
+In order to replicate the results obtained in this repository, use the same menshen and open-nic versions:
+- for menshen checkout at the commit *fc968bf28626c8f8a610592749a8b2542f0c1f0f*
+- for open-nic checkout at the commit *80777515c83cc04d8497522669aa82dd914d1e08*
