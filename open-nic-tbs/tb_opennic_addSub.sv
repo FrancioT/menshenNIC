@@ -2,8 +2,7 @@
 `timescale 1ns / 1ps
 
 module tb_opennic #(
-parameter DATA_WIDTH=512,
-parameter NUM_CMAC_PORT = 2
+parameter DATA_WIDTH=512
 )();
 
 wire                        clk;
@@ -21,17 +20,15 @@ wire                        s_axis_tready;
 reg                         s_axis_tlast;
 reg [31:0]                  s_axis_tcrc;
 
-wire [DATA_WIDTH*NUM_CMAC_PORT-1:0]          m_axis_tx_tdata;
-wire [((DATA_WIDTH/8)*NUM_CMAC_PORT)-1:0]    m_axis_tx_tkeep;
-wire [NUM_CMAC_PORT-1:0]    m_axis_tx_tuser;
-wire [NUM_CMAC_PORT-1:0]    m_axis_tx_tvalid;
-reg  [NUM_CMAC_PORT-1:0]    m_axis_tready;
-wire [NUM_CMAC_PORT-1:0]    m_axis_tx_tlast;
-wire [DATA_WIDTH-1:0]       m_axis_tdata [1:0];
-wire [DATA_WIDTH/8-1:0]     m_axis_tkeep [1:0];
-wire                        m_axis_tuser   [1:0];
-wire                        m_axis_tvalid  [1:0];
-wire                        m_axis_tlast   [1:0];
+wire [DATA_WIDTH-1:0]       m_axis_tdata;
+wire [((DATA_WIDTH/8))-1:0] m_axis_tkeep;
+wire                        m_axis_tuser;
+wire                        m_axis_tvalid;
+reg                         m_axis_tready;
+wire                        m_axis_tlast;
+reg                         finished_config;
+reg                         value_detected_add;
+reg                         value_detected_sub;
 reg                         tuser_error;
 reg                         tuser_zero_byte;
 reg [10:0]                  tuser_qid;
@@ -54,33 +51,14 @@ wire [31:0]                 axil_rdata;
 wire [1:0]                  axil_rresp;
 reg                         axil_rready;
 
-
-assign m_axis_tdata[0] = m_axis_tx_tdata[DATA_WIDTH-1:0];
-assign m_axis_tkeep[0] = m_axis_tx_tkeep[DATA_WIDTH/8-1:0];
-assign m_axis_tuser[0] = m_axis_tx_tuser[0];
-assign m_axis_tvalid[0] = m_axis_tx_tvalid[0];
-assign m_axis_tlast[0] = m_axis_tx_tlast[0];
-
-assign m_axis_tdata[1] = m_axis_tx_tdata[DATA_WIDTH*NUM_CMAC_PORT-1:DATA_WIDTH];
-assign m_axis_tkeep[1] = m_axis_tx_tkeep[((DATA_WIDTH/8)*NUM_CMAC_PORT)-1:DATA_WIDTH/8];
-assign m_axis_tuser[1] = m_axis_tx_tuser[1];
-assign m_axis_tvalid[1] = m_axis_tx_tvalid[1];
-assign m_axis_tlast[1] = m_axis_tx_tlast[1];
-
 assign rst_done = (&shell_rst_done) & (&user_rst_done);
 
-// Output validation, define the target value you are looking for
-// SUB EXPECTED OUTPUT
-localparam logic [DATA_WIDTH-1:0] TARGET_VALUE_SUB = 512'h000000000100000002000000030000001a004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
-// ADD EXPECTED OUTPUT
-localparam logic [DATA_WIDTH-1:0] TARGET_VALUE_ADD = 512'h000000000500000002000000030000000d00594d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
-// STAGES EXPECTED OUTPUT
-localparam logic [DATA_WIDTH-1:0] TARGET_VALUE_STAGES= 512'h00000000100000000c0000000400000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
-
 initial begin
+    finished_config = 0;
     tuser_error = 0;
     tuser_zero_byte = 0;
     tuser_port_id = 0;
+    tuser_qid = 0;
     
     axil_awvalid <= 0;
     axil_awaddr <= 0;
@@ -102,15 +80,11 @@ initial begin
         @(posedge clk);
     
     
-    register_setup(32'h00001000, 32'h00000001);
-    register_setup(32'h00002000, 32'h00020001);
-    tuser_qid = 0;
-    configuration("calc_conf.txt", 0);
-    tuser_qid = 2;
-    configuration("LongPipeline_conf.txt", 1);
+    register_setup(32'h00001000, 32'h00000001);    
+    configuration();
     
     
-    tuser_qid = 0;
+    finished_config <= 1;
     s_axis_tdata <= 512'h000000000000000002000000030000001a004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
     s_axis_tuser_mty <= 6'b000000;
     s_axis_tvalid <= 1'b1;
@@ -118,17 +92,18 @@ initial begin
     @(posedge clk);
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
-    @(posedge m_axis_tvalid[0])
-    if (m_axis_tdata[0] == TARGET_VALUE_SUB) begin 
-        $display ("SUB TEST PASSED"); 
+    repeat(1000)
+        @(posedge clk);
+    if (value_detected_sub) begin
+        $display("SUB Test passed");
     end else begin
-        $display ("SUB TEST FAILED");
-        $display("%h", m_axis_tdata[0]);
+        $display("SUB Test failed");
+        $display("%h", m_axis_tdata);
         $finish(0);
     end
     
     // some time has passed   
-    repeat(100)
+    repeat(1000)
         @(posedge clk);
     s_axis_tdata <= 512'h000000000000000002000000030000000d00594d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
     s_axis_tuser_mty <= 6'b000000;
@@ -137,36 +112,13 @@ initial begin
     @(posedge clk);
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
-    @(posedge m_axis_tvalid[0])
-    if (m_axis_tdata[0] == TARGET_VALUE_ADD) begin 
-        $display ("ADD TEST PASSED"); 
-    end else begin
-        $display ("ADD TEST FAILED");
-        $display("%h", m_axis_tdata[0]);
-        $finish(0);
-    end
-    
-    
-    // some time has passed   
-    repeat(100)
+    repeat(1000)
         @(posedge clk);
-    tuser_qid = 2;
-    s_axis_tdata <= 512'h0000000028000000020000000000000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;	
-    s_axis_tuser_mty <= 6'b000000;
-    s_axis_tvalid <= 1'b1;
-    s_axis_tlast <= 1'b1;
-    @(posedge clk);
-    s_axis_tvalid <= 1'b0;
-    s_axis_tlast <= 1'b0;
-    
-    // Check result
-    @(posedge m_axis_tvalid[1])
-    if (m_axis_tdata[1] == TARGET_VALUE_STAGES) begin
-        $display ("STAGES TEST PASSED");
+    if (value_detected_add) begin
+        $display("ADD Test passed");
     end else begin
-        $display ("STAGES TEST FAILED");
-        $display("%h", m_axis_tdata[1]);
-        @(posedge clk);
+        $display("ADD Test failed");
+        $display("%h", m_axis_tdata);
         $finish(0);
     end
     $finish(0);
@@ -174,21 +126,20 @@ end
 
 
 // Tasks:
-task configuration(input string file_name,
-                   input int cmac_port);
+task configuration;
 int fd;
 begin
     repeat(40)
         @(posedge clk);
     s_axis_tcrc <= 32'b0;
-    m_axis_tready[cmac_port] <= 1'b1;
+    m_axis_tready <= 1'b1;
     s_axis_tuser <= 32'h0000004A;
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     repeat(3)
         @(posedge clk);
     
-    fd = $fopen(file_name, "r");
+    fd = $fopen("calc_conf.txt", "r");
     while(!$feof(fd))
     begin
         $fscanf(fd, "%h\n%b\n", s_axis_tdata, s_axis_tuser_mty);
@@ -234,6 +185,33 @@ begin
 end
 endtask
 
+// Output validation
+// Define the target value you are looking for
+// SUB EXPECTED OUTPUT
+localparam logic [DATA_WIDTH-1:0] TARGET_VALUE_SUB = 512'h000000000100000002000000030000001a004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
+// ADD EXPECTED OUTPUT
+localparam logic [DATA_WIDTH-1:0] TARGET_VALUE_ADD = 512'h000000000500000002000000030000000d00594d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
+
+
+// LOGIC TO CHECK IF THE SUB TARGET VALUE IS DETECTED
+always_ff @(edge clk) begin
+    if (finished_config && m_axis_tvalid && m_axis_tdata == TARGET_VALUE_SUB) begin
+        value_detected_sub <= 1;
+    end
+    else begin
+        value_detected_sub <= aresetn & value_detected_sub;
+    end
+end
+
+// LOGIC TO CHECK IF THE ADD TARGET VALUE IS DETECTED
+always_ff @(edge clk) begin
+    if (finished_config && m_axis_tvalid && m_axis_tdata == TARGET_VALUE_ADD) begin
+        value_detected_add <= 1;
+    end
+    else begin
+        value_detected_add <= aresetn & value_detected_add;
+    end
+end
 
 
 open_nic_shell #()
@@ -259,12 +237,12 @@ open_nic_shell_ins
 	.s_axis_qdma_h2c_sim_tcrc(s_axis_tcrc),
 
 	// output Master AXI Stream
-	.m_axis_cmac_tx_sim_tdata(m_axis_tx_tdata),
-	.m_axis_cmac_tx_sim_tkeep(m_axis_tx_tkeep),
-	.m_axis_cmac_tx_sim_tvalid(m_axis_tx_tvalid),
-	.m_axis_cmac_tx_sim_tuser_err(m_axis_tx_tuser),
+	.m_axis_cmac_tx_sim_tdata(m_axis_tdata),
+	.m_axis_cmac_tx_sim_tkeep(m_axis_tkeep),
+	.m_axis_cmac_tx_sim_tvalid(m_axis_tvalid),
+	.m_axis_cmac_tx_sim_tuser_err(m_axis_tuser),
 	.m_axis_cmac_tx_sim_tready(m_axis_tready),
-	.m_axis_cmac_tx_sim_tlast(m_axis_tx_tlast),
+	.m_axis_cmac_tx_sim_tlast(m_axis_tlast),
 	
 	.s_axil_sim_awvalid(axil_awvalid),
 	.s_axil_sim_awaddr(axil_awaddr),

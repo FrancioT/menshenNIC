@@ -16,11 +16,12 @@
 //
 // *************************************************************************
 `include "open_nic_shell_macros.vh"
-`include "../menshen/rmt_wrapper.v"
+`include "../menshen/rmt_wrapper.sv"
 `timescale 1ns/1ps
 module p2p_250mhz #(
   parameter int NUM_QDMA = 1,
-  parameter int NUM_INTF = 1
+  parameter int NUM_INTF = 1,
+  parameter int PIPE_SIZE[4] = {5, 16, 32, 10}
 ) (
   input        [NUM_INTF*2-1:0] s_axil_awvalid,
   input     [32*NUM_INTF*2-1:0] s_axil_awaddr,
@@ -279,7 +280,7 @@ module p2p_250mhz #(
         .aclk          (axis_aclk),
         .aresetn       (axil_aresetn)
       );*/
-      rmt_wrapper #() tx_ppl_inst (
+      rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) tx_ppl_inst (
         .clk(axis_aclk),		// axis clk
         .aresetn(axil_aresetn),	
 
