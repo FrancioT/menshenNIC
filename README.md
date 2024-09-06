@@ -7,13 +7,14 @@ The integration consists in the development of an OpenNIC 250MHz user plugin box
 ## Directory structure
  ```sh
 menshen-open-nic/
-├── src/                        # OpenNIC user plugin template, accordingly patched for the architecture of Menshen
+├── src/                        # OpenNIC user plugin template, accordingly patched for 
+|                               # the architecture of Menshen
 ├── p4s/                        # Source files for our tests, written in the P4 language
 ├── tbs/                        # Unit tests for Menshen by itself
-├── open-nic-shell-patches/     # diff patches for modifying the OpenNIC environment to insert the Menshen pipeline
+├── patch_files/                # diff patches for modifying the OpenNIC environment and the 
+|                               # Xilinx cam IPs
 ├── open-nic-tbs/               # Tests the complete component
-├── menshen-open-nic.sh         # Script for project generation
-└── open-nic-integration.tcl    # TCL build file to include Menshen inside OpenNIC's 250MHz box
+└── menshen-open-nic.sh         # Script for project generation
 ```
 ## Building
 The build process consists on running a script that will clone the OpenNIC and Menshen repositories and patch the files necessary for building and testing the component on the OpenNIC platform.

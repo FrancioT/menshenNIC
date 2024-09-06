@@ -1,4 +1,4 @@
-# P4 Scripts
+# Open-nic testbenches
 This folder contains:
 - the testbenches for the menshen integration in opennic
 - the "configurations" folder, where there are the files containing the configurations of the menshen pypeline for each testbench
