@@ -5,9 +5,11 @@ git clone https://github.com/multitenancy-project/menshen.git
 mv menshen/lib_rmt/rmtv2/ rmtv2
 mv menshen/lib_rmt/netfpga_fifo/fallthrough_small_fifo_v1_0_0/hdl/fallthrough_small_fifo.v rmtv2/
 mv menshen/lib_rmt/netfpga_fifo/fallthrough_small_fifo_v1_0_0/hdl/small_fifo.v rmtv2/
+rm rmtv2/rmt_wrapper.v
+cp patch_files/rmt_wrapper.sv rmtv2/rmt_wrapper.sv
 rm -rf menshen
 mv rmtv2 menshen
-cp opennic_integration.tcl menshen/tcl/
+cp patch_files/opennic_integration.tcl menshen/tcl/
 cp tbs/tb_rmt_wrapper_calc.sv menshen/tb/
 cp tbs/tb_rmt_wrapper_drop.sv menshen/tb/
 cp tbs/tb_rmt_wrapper_if_else.sv menshen/tb/
@@ -17,9 +19,9 @@ cp tbs/tb_rmt_wrapper_stages.sv menshen/tb/
 # ON SHELL
 [ -d "open-nic-shell" ] && rm -rf "open-nic-shell"
 git clone https://github.com/Xilinx/open-nic-shell.git
-patch open-nic-shell/script/build.tcl < open-nic-shell-patches/build.patch
-patch open-nic-shell/src/open_nic_shell.sv < open-nic-shell-patches/open_nic_shell.patch
-patch open-nic-shell/src/open_nic_shell_macros.vh < open-nic-shell-patches/open_nic_shell_macros.patch
+patch open-nic-shell/script/build.tcl < patch_files/build.patch
+patch open-nic-shell/src/open_nic_shell.sv < patch_files/open_nic_shell.patch
+patch open-nic-shell/src/open_nic_shell_macros.vh < patch_files/open_nic_shell_macros.patch
 realpath open-nic-tbs
 # ABS PATH PATCHES
 OS_TYPE=$(uname)

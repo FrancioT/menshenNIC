@@ -1,5 +1,5 @@
 # Menshen port on the OpenNIC platform
-This projects consists in the parametrization of the [Menshen](https://github.com/multitenancy-project/menshen) pipeline, an hardware library for an High-Speed Programmable Packet-Processing Pipeline, and the integration of multiple instances of different lenght (number of stages) in an AMD's [OpenNIC](https://github.com/Xilinx/open-nic-shell) platform, which is an open-source FPGA-based NIC.
+This projects consists in the parameterization of the [Menshen](https://github.com/multitenancy-project/menshen) pipeline, an hardware library for an High-Speed Programmable Packet-Processing Pipeline, and the integration of multiple instances of different lenght (number of stages) in an AMD's [OpenNIC](https://github.com/Xilinx/open-nic-shell) platform, which is an open-source FPGA-based NIC.
 
 You can read Menshen's paper and learn about the project [here](https://www.usenix.org/system/files/nsdi22-paper-wang_tao.pdf).
 
@@ -26,7 +26,7 @@ The build process consists on running a script that will clone the OpenNIC and M
    ```sh
    unzip xapp1151_Param_CAM.zip
    cp -r xapp1151_cam_v1_1/src/vhdl ./xilinx_cam
-   patch -p0 --ignore-whitespace -i cam.patch
+   patch -p0 --ignore-whitespace -i patch_files/cam.patch
    ```
 3. Give to the script the necessary permissions
    ```sh
