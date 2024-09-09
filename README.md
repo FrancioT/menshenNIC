@@ -40,7 +40,7 @@ The build process consists on running a script that will clone the OpenNIC and M
 5. In order to include the component inside OpenNIC you will need to build with this command, using Vivado 2022.1
    ```sh
    cd path/to/menshen-open-nic/open-nic-shell/script
-   vivado -mode tcl -source build.tcl -tclargs -board au55c -user_plugin ../../src
+   vivado -mode tcl -source build.tcl -tclargs -board au55c -num_cmac_port 2 -num_phys_func 2 -user_plugin ../../src
    ```
 ## Sidenotes
 The port has only been built and tested on an Alveo U55C board, therefore support on other Alveo boards isn't guaranteed.
