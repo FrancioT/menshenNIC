@@ -236,7 +236,10 @@ endtask
 
 
 
-open_nic_shell #()
+open_nic_shell #(
+.NUM_PHYS_FUNC(2),
+.NUM_CMAC_PORT(2)
+)
 open_nic_shell_ins
 (
 	.axis_aclk(clk),		// axis clk
