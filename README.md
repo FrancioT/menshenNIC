@@ -8,11 +8,11 @@ The integration consists in the development of an OpenNIC 250MHz user plugin box
  ```sh
 menshen-open-nic/
 ├── src/                        # OpenNIC user plugin template, accordingly patched for 
-|                               # the architecture of Menshen
+│                               # the architecture of Menshen
 ├── p4s/                        # Source files for our tests, written in the P4 language
 ├── tbs/                        # Unit tests for Menshen by itself
 ├── patch_files/                # diff patches for modifying the OpenNIC environment and the 
-|                               # Xilinx cam IPs
+│                               # Xilinx cam IPs
 ├── open-nic-tbs/               # Tests the complete component
 └── menshen-open-nic.sh         # Script for project generation
 ```

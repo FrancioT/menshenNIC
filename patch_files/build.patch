@@ -13,10 +13,11 @@
 +set_property SOURCE_SET sources_1 [get_filesets sim_1]
 +add_files -fileset sim_1 -norecurse {{VAR}}/bd_7485_lmb_bram_0.mem {{VAR}}/bd_7485_reg_map_bram_0.mem
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_addSub.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_drop.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_modules.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_stages.sv
-+add_files -fileset sim_1 -norecurse {{VAR}}/configurations/modules_conf.txt {{VAR}}/configurations/calc_conf.txt {{VAR}}/configurations/drop_conf.txt {{VAR}}/configurations/stages_conf.txt
++add_files -fileset sim_1 -norecurse {{VAR}}/configurations/modules_conf.txt {{VAR}}/configurations/LongPipeline_conf.txt {{VAR}}/configurations/calc_conf.txt {{VAR}}/configurations/drop_conf.txt {{VAR}}/configurations/stages_conf.txt
 +set_property top tb_opennic [get_filesets sim_1]
 +set_property top_lib xil_defaultlib [get_filesets sim_1]
 +update_compile_order -fileset sim_1
