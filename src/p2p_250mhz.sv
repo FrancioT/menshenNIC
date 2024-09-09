@@ -262,24 +262,6 @@ module p2p_250mhz #(
       assign m_axis_qdma_c2h_tuser_src[`getvec(16, i)]        = axis_qdma_c2h_tuser[16+:16];
       assign m_axis_qdma_c2h_tuser_dst[`getvec(16, i)]        = 16'h1 << i;
 
-      /*axi_stream_pipeline tx_ppl_inst (
-        .s_axis_tvalid (s_axis_qdma_h2c_tvalid[i]),
-        .s_axis_tdata  (s_axis_qdma_h2c_tdata[`getvec(512, i)]),
-        .s_axis_tkeep  (s_axis_qdma_h2c_tkeep[`getvec(64, i)]),
-        .s_axis_tlast  (s_axis_qdma_h2c_tlast[i]),
-        .s_axis_tuser  (axis_qdma_h2c_tuser),
-        .s_axis_tready (s_axis_qdma_h2c_tready[i]),
-
-        .m_axis_tvalid (m_axis_adap_tx_250mhz_tvalid[i]),
-        .m_axis_tdata  (m_axis_adap_tx_250mhz_tdata[`getvec(512, i)]),
-        .m_axis_tkeep  (m_axis_adap_tx_250mhz_tkeep[`getvec(64, i)]),
-        .m_axis_tlast  (m_axis_adap_tx_250mhz_tlast[i]),
-        .m_axis_tuser  (axis_adap_tx_250mhz_tuser),
-        .m_axis_tready (m_axis_adap_tx_250mhz_tready[i]),
-
-        .aclk          (axis_aclk),
-        .aresetn       (axil_aresetn)
-      );*/
       rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) tx_ppl_inst (
         .clk(axis_aclk),		// axis clk
         .aresetn(axil_aresetn),	
@@ -301,23 +283,25 @@ module p2p_250mhz #(
         .m_axis_tlast(m_axis_adap_tx_250mhz_tlast[i])
       );
 
-      axi_stream_pipeline rx_ppl_inst (
-        .s_axis_tvalid (s_axis_adap_rx_250mhz_tvalid[i]),
-        .s_axis_tdata  (s_axis_adap_rx_250mhz_tdata[`getvec(512, i)]),
-        .s_axis_tkeep  (s_axis_adap_rx_250mhz_tkeep[`getvec(64, i)]),
-        .s_axis_tlast  (s_axis_adap_rx_250mhz_tlast[i]),
-        .s_axis_tuser  (axis_adap_rx_250mhz_tuser),
-        .s_axis_tready (s_axis_adap_rx_250mhz_tready[i]),
+      rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) rx_ppl_inst (
+        .clk(axis_aclk),		// axis clk
+        .aresetn(axil_aresetn),	
 
-        .m_axis_tvalid (m_axis_qdma_c2h_tvalid[i]),
-        .m_axis_tdata  (m_axis_qdma_c2h_tdata[`getvec(512, i)]),
-        .m_axis_tkeep  (m_axis_qdma_c2h_tkeep[`getvec(64, i)]),
-        .m_axis_tlast  (m_axis_qdma_c2h_tlast[i]),
-        .m_axis_tuser  (axis_qdma_c2h_tuser),
-        .m_axis_tready (m_axis_qdma_c2h_tready[i]),
+        // input Slave AXI Stream
+        .s_axis_tdata(s_axis_adap_rx_250mhz_tdata[`getvec(512, i)]),
+        .s_axis_tkeep(s_axis_adap_rx_250mhz_tkeep[`getvec(64, i)]),
+        .s_axis_tuser(axis_adap_rx_250mhz_tuser),
+        .s_axis_tvalid(s_axis_adap_rx_250mhz_tvalid[i]),
+        .s_axis_tready(s_axis_adap_rx_250mhz_tready[i]),
+        .s_axis_tlast(s_axis_adap_rx_250mhz_tlast[i]),
 
-        .aclk          (axis_aclk),
-        .aresetn       (axil_aresetn)
+        // output Master AXI Stream
+        .m_axis_tdata(m_axis_qdma_c2h_tdata[`getvec(512, i)]),
+        .m_axis_tkeep(m_axis_qdma_c2h_tkeep[`getvec(64, i)]),
+        .m_axis_tuser(axis_qdma_c2h_tuser),
+        .m_axis_tvalid(m_axis_qdma_c2h_tvalid[i]),
+        .m_axis_tready(m_axis_qdma_c2h_tready[i]),
+        .m_axis_tlast(m_axis_qdma_c2h_tlast[i])
       );
     end
   end
