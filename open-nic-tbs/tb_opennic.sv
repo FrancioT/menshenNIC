@@ -28,7 +28,7 @@ reg [31:0]                  s_axis_h2c_tuser;
 
 wire [DATA_WIDTH-1:0]       m_axis_c2h_tdata;
 wire                        m_axis_c2h_tvalid;
-wire                        m_axis_c2h_tready;
+reg                         m_axis_c2h_tready;
 wire                        m_axis_c2h_tlast;
 wire [5:0]                  m_axis_c2h_mty;
 wire [31:0]                 m_axis_c2h_tcrc;
@@ -85,6 +85,7 @@ initial begin
     s_axis_h2c_tuser_error = 0;
     s_axis_h2c_tuser_zero_byte = 0;
     s_axis_h2c_tuser_port_id = 0;
+    s_axis_rx_tuser_err = 0;
     
     axil_awvalid <= 0;
     axil_awaddr <= 0;
@@ -106,16 +107,24 @@ initial begin
         @(posedge clk);
     
     
+    // C2H pipelines configuration:
+    configuration_c2h("calc_conf_c2h.txt", s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
+                                           m_axis_c2h_tready, s_axis_rx_tlast[0], s_axis_rx_tkeep[0]);
+    
+    configuration_c2h("LongPipeline_conf_c2h.txt", s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
+                                                   m_axis_c2h_tready, s_axis_rx_tlast[1], s_axis_rx_tkeep[1]);
+    
+    // H2C pipelines configuration:
     register_setup(32'h00001000, 32'h00000001);
     register_setup(32'h00002000, 32'h00020001);
     s_axis_h2c_tuser_qid = 0;
-    configuration("calc_conf.txt", 0, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready, 
-                                      s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
-                                      s_axis_h2c_tuser);
+    configuration_h2c("calc_conf.txt", s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[0], 
+                                       s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
+                                       s_axis_h2c_tuser);
     s_axis_h2c_tuser_qid = 2;
-    configuration("LongPipeline_conf.txt", 1, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready, 
-                                              s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
-                                              s_axis_h2c_tuser);
+    configuration_h2c("LongPipeline_conf.txt", s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[1], 
+                                               s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
+                                               s_axis_h2c_tuser);
     
     
     s_axis_h2c_tuser_qid = 0;
@@ -126,6 +135,7 @@ initial begin
     @(posedge clk);
     s_axis_h2c_tvalid <= 1'b0;
     s_axis_h2c_tlast <= 1'b0;
+    // Check result
     @(posedge m_axis_tx_tvalid[0])
     if (m_axis_tx_tdata[0] == TARGET_VALUE_SUB) begin 
         $display ("SUB TEST PASSED"); 
@@ -145,6 +155,7 @@ initial begin
     @(posedge clk);
     s_axis_h2c_tvalid <= 1'b0;
     s_axis_h2c_tlast <= 1'b0;
+    // Check result
     @(posedge m_axis_tx_tvalid[0])
     if (m_axis_tx_tdata[0] == TARGET_VALUE_ADD) begin 
         $display ("ADD TEST PASSED"); 
@@ -166,7 +177,6 @@ initial begin
     @(posedge clk);
     s_axis_h2c_tvalid <= 1'b0;
     s_axis_h2c_tlast <= 1'b0;
-    
     // Check result
     @(posedge m_axis_tx_tvalid[1])
     if (m_axis_tx_tdata[1] == TARGET_VALUE_STAGES) begin
@@ -177,26 +187,85 @@ initial begin
         @(posedge clk);
         $finish(0);
     end
-    $finish(0);
+    
+    // some time has passed   
+    repeat(100)
+        @(posedge clk);
+    s_axis_rx_tdata[0] <= 512'h000000000000000002000000030000001a004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
+    s_axis_rx_tkeep[0] <= 64'hffffffffffffffff;
+    s_axis_rx_tvalid[0] <= 1'b1;
+    s_axis_rx_tlast[0] <= 1'b1;
+    @(posedge clk);
+    s_axis_rx_tvalid[0] <= 1'b0;
+    s_axis_rx_tlast[0] <= 1'b0;
+    // Check result
+    @(posedge m_axis_c2h_tvalid)
+    if (m_axis_c2h_tdata == TARGET_VALUE_SUB) begin 
+        $display ("SUB TEST PASSED"); 
+    end else begin
+        $display ("SUB TEST FAILED");
+        $display("%h", m_axis_c2h_tdata);
+        $finish(0);
+    end
+    
+    // some time has passed   
+    repeat(100)
+        @(posedge clk);
+    s_axis_rx_tdata[0] <= 512'h000000000000000002000000030000000d00594d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
+    s_axis_rx_tkeep[0] <= 64'hffffffffffffffff;
+    s_axis_rx_tvalid[0] <= 1'b1;
+    s_axis_rx_tlast[0] <= 1'b1;
+    @(posedge clk);
+    s_axis_rx_tvalid[0] <= 1'b0;
+    s_axis_rx_tlast[0] <= 1'b0;
+    // Check result
+    @(posedge m_axis_c2h_tvalid)
+    if (m_axis_c2h_tdata == TARGET_VALUE_ADD) begin 
+        $display ("ADD TEST PASSED"); 
+    end else begin
+        $display ("ADD TEST FAILED");
+        $display("%h", m_axis_c2h_tdata);
+        $finish(0);
+    end
+    
+    // some time has passed   
+    repeat(100)
+        @(posedge clk);
+    s_axis_h2c_tdata[1] <= 512'h0000000028000000020000000000000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;	
+    s_axis_rx_tkeep[1] <= 64'hffffffffffffffff;
+    s_axis_rx_tvalid[1] <= 1'b1;
+    s_axis_rx_tlast[1] <= 1'b1;
+    @(posedge clk);
+    s_axis_rx_tvalid[1] <= 1'b0;
+    s_axis_rx_tlast[1] <= 1'b0;
+    // Check result
+    @(posedge m_axis_c2h_tvalid)
+    if (m_axis_c2h_tdata == TARGET_VALUE_STAGES) begin
+        $display ("STAGES TEST PASSED");
+    end else begin
+        $display ("STAGES TEST FAILED");
+        $display("%h", m_axis_c2h_tdata);
+        @(posedge clk);
+        $finish(0);
+    end
 end
 
 
 // Tasks:
-task automatic configuration(input string                file_name,
-                   input int                   cmac_port,
-                   ref reg [DATA_WIDTH-1:0]    s_axis_tdata,
-                   ref reg                     s_axis_tvalid,
-                   ref reg [NUM_CMAC_PORT-1:0] m_axis_tready,
-                   ref reg                     s_axis_tlast,
-                   ref reg [5:0]               s_axis_tuser_mty,
-                   ref reg [31:0]              s_axis_tcrc,
-                   ref reg [31:0]              s_axis_tuser);
+task automatic configuration_h2c(input string             file_name,
+                                 ref reg [DATA_WIDTH-1:0] s_axis_tdata,
+                                 ref reg                  s_axis_tvalid,
+                                 ref reg                  m_axis_tready,
+                                 ref reg                  s_axis_tlast,
+                                 ref reg [5:0]            s_axis_tuser_mty,
+                                 ref reg [31:0]           s_axis_tcrc,
+                                 ref reg [31:0]           s_axis_tuser);
 int fd;
 begin
     repeat(40)
         @(posedge clk);
     s_axis_tcrc = 32'b0;
-    m_axis_tready[cmac_port] = 1'b1;
+    m_axis_tready = 1'b1;
     s_axis_tuser = 32'h0000004A;
     s_axis_tvalid = 1'b0;
     s_axis_tlast = 1'b0;
@@ -228,6 +297,48 @@ begin
 end
 endtask
 
+
+task automatic configuration_c2h(input string                 file_name,
+                                 ref reg [DATA_WIDTH-1:0]     s_axis_tdata,
+                                 ref reg                      s_axis_tvalid,
+                                 ref reg                      m_axis_tready,
+                                 ref reg                      s_axis_tlast,
+                                 ref reg [(DATA_WIDTH/8)-1:0] s_axis_tkeep);
+int fd;
+begin
+    repeat(40)
+        @(posedge clk);
+    m_axis_tready = 1'b1;
+    s_axis_tvalid = 1'b0;
+    s_axis_tlast = 1'b0;
+    repeat(3)
+        @(posedge clk);
+    
+    fd = $fopen(file_name, "r");
+    while(!$feof(fd))
+    begin
+        $fscanf(fd, "%h\n%b\n", s_axis_tdata, s_axis_tkeep);
+        s_axis_tvalid = 1'b1;
+        if(s_axis_tkeep != 6'b000000)
+        begin
+            s_axis_tlast = 1'b1;
+            @(posedge clk);
+            s_axis_tvalid = 1'b0;
+            s_axis_tlast = 1'b0;
+            repeat(30)
+                @(posedge clk);
+        end
+        else
+        begin
+            s_axis_tlast = 1'b0;
+            @(posedge clk);
+        end
+    end
+    $fclose(fd);
+end
+endtask
+
+
 task register_setup(input [31:0] reg_addr, reg_val);
 begin
     // set register for qdma with axi4 lite     
@@ -250,6 +361,8 @@ end
 endtask
 
 
+
+// module instantiation 
 
 open_nic_shell #(
 .NUM_PHYS_FUNC(2),

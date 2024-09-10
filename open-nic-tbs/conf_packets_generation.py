@@ -55,7 +55,7 @@ def big_endian(hex_value):
 def pad_left_string_zeros(old_string, factor):
 	return ("0"*(factor-len(old_string)+(len(old_string)//factor)*factor) + old_string) if len(old_string)%factor != 0 else old_string
 
-def output_to_file(file_name):
+def output_to_file(file_name, direction):
 	parsed_file = parse_configuration(file_name)
 	#print("// "+file_name.split("/")[-1] + ":")
 	for chunk in parsed_file:
@@ -69,30 +69,41 @@ def output_to_file(file_name):
 			raise Exception("Error, conversion not consistent!")
 		
 		data_signal = str(changed)[12:-2]
+		keep_signal = convert_bstr_to_hstr("1"*(len(changed)//2))
 		# PADDING
 		data_signal = pad_left_string_zeros(data_signal, 128)
+		keep_signal = pad_left_string_zeros(keep_signal, 16)
 		
 		for_range = len(data_signal)//128
 		for i in range(0, for_range):
 			print(data_signal[-i*128-128:len(data_signal)-i*128])
-			if i!=for_range-1:
-				print("000000")
+			if direction == "c2h":
+				print(keep_signal[-i*16-16:len(keep_signal)-i*16])
 			else:
-				print(format(64-((len(changed)//2)%64), "06b"))
-				print(format(crc_calc.checksum(bytes(chunk)), "032b")+"\n")
+				if i!=for_range-1:
+					print("000000")
+				else:
+					print(format(64-((len(changed)//2)%64), "06b"))
+					print(format(crc_calc.checksum(bytes(chunk)), "032b")+"\n")
 
 
 
-
-sys.stdout = open("conf_packets.txt",'w')
+if len(sys.argv)<2:
+	raise Exception("Error, you must choose a direction!\nPass as argument to the program \"h2c\" or \"c2h\"")
+if sys.argv[1] == "h2c":
+	sys.stdout = open("conf_packets.txt",'w')
+elif sys.argv[1] == "c2h":
+	sys.stdout = open("conf_packets_c2h.txt",'w')
+else:
+	raise Exception("Error, unknown direction!\nPass as argument to the program \"h2c\" or \"c2h\"")
 crc_calc = Calculator(Crc32.CRC32)
 
 # CONFIGURATION PACKETS
-output_to_file("p4_generated/conf1.txt")
-#output_to_file("p4_generated/conf2.txt")
-#output_to_file("p4_generated/conf3.txt")
-#output_to_file("p4_generated/confsys.txt")
-output_to_file("p4_generated/stateconf.txt")
+output_to_file("p4_generated/conf1.txt", sys.argv[1])
+#output_to_file("p4_generated/conf2.txt", sys.argv[1])
+#output_to_file("p4_generated/conf3.txt", sys.argv[1])
+#output_to_file("p4_generated/confsys.txt", sys.argv[1])
+output_to_file("p4_generated/stateconf.txt", sys.argv[1])
 
 
 

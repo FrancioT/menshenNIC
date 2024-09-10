@@ -5,3 +5,7 @@ This folder contains:
 - the "conf_packets_generation.py" file, which is similar to *the verilog_converter.py* file of the *p4s* folder
 - 2 *.mem* files, used during the simulation to initialize the board memory
 
+## Conf_packets_generation.py
+To create a correct configuration file, copy the desired p4 compiled testbench folder in this directory and rename it to "p4_generted".
+After doing so execute the python script passing as argument the direction of the pipeline to be reconfigured (the 2 arguments accepted are **c2h** and **h2c**).
+

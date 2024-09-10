@@ -169,6 +169,7 @@ initial begin
         @(posedge clk);
         $finish(0);
     end
+    @(posedge clk);
     $finish(0);
 end
 
