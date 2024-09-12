@@ -107,13 +107,6 @@ initial begin
         @(posedge clk);
     
     
-    // C2H pipelines configuration:
-    configuration_c2h("calc_conf_c2h.txt", s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
-                                           m_axis_c2h_tready, s_axis_rx_tlast[0], s_axis_rx_tkeep[0]);
-    
-    configuration_c2h("LongPipeline_conf_c2h.txt", s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
-                                                   m_axis_c2h_tready, s_axis_rx_tlast[1], s_axis_rx_tkeep[1]);
-    
     // H2C pipelines configuration:
     register_setup(32'h00001000, 32'h00000001);
     register_setup(32'h00002000, 32'h00020001);
@@ -125,6 +118,12 @@ initial begin
     configuration_h2c("LongPipeline_conf.txt", s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[1], 
                                                s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
                                                s_axis_h2c_tuser);
+    // C2H pipelines configuration:
+    configuration_c2h("calc_conf_c2h.txt", s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
+                                           m_axis_c2h_tready, s_axis_rx_tlast[0], s_axis_rx_tkeep[0]);
+    
+    configuration_c2h("LongPipeline_conf_c2h.txt", s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
+                                                   m_axis_c2h_tready, s_axis_rx_tlast[1], s_axis_rx_tkeep[1]);
     
     
     s_axis_h2c_tuser_qid = 0;
@@ -142,6 +141,7 @@ initial begin
     end else begin
         $display ("SUB TEST FAILED");
         $display("%h", m_axis_tx_tdata[0]);
+        @(posedge clk);
         $finish(0);
     end
     
@@ -162,6 +162,7 @@ initial begin
     end else begin
         $display ("ADD TEST FAILED");
         $display("%h", m_axis_tx_tdata[0]);
+        @(posedge clk);
         $finish(0);
     end
     
@@ -205,6 +206,7 @@ initial begin
     end else begin
         $display ("SUB TEST FAILED");
         $display("%h", m_axis_c2h_tdata);
+        @(posedge clk);
         $finish(0);
     end
     
@@ -225,13 +227,14 @@ initial begin
     end else begin
         $display ("ADD TEST FAILED");
         $display("%h", m_axis_c2h_tdata);
+        @(posedge clk);
         $finish(0);
     end
     
     // some time has passed   
     repeat(100)
         @(posedge clk);
-    s_axis_h2c_tdata[1] <= 512'h0000000028000000020000000000000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;	
+    s_axis_rx_tdata[1] <= 512'h0000000028000000020000000000000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;	
     s_axis_rx_tkeep[1] <= 64'hffffffffffffffff;
     s_axis_rx_tvalid[1] <= 1'b1;
     s_axis_rx_tlast[1] <= 1'b1;
@@ -248,6 +251,7 @@ initial begin
         @(posedge clk);
         $finish(0);
     end
+    @(posedge clk);
 end
 
 
@@ -317,9 +321,9 @@ begin
     fd = $fopen(file_name, "r");
     while(!$feof(fd))
     begin
-        $fscanf(fd, "%h\n%b\n", s_axis_tdata, s_axis_tkeep);
+        $fscanf(fd, "%h\n%h\n", s_axis_tdata, s_axis_tkeep);
         s_axis_tvalid = 1'b1;
-        if(s_axis_tkeep != 6'b000000)
+        if(s_axis_tkeep != 64'hffffffffffffffff)
         begin
             s_axis_tlast = 1'b1;
             @(posedge clk);
