@@ -7,6 +7,7 @@ parameter NUM_CMAC_PORT = 2
 )();
 
 wire                        clk;
+wire                        cmac_clk;
 wire                        axil_clk;
 reg                         aresetn;
 wire [31:0]                 shell_rst_done;
@@ -311,12 +312,12 @@ task automatic configuration_c2h(input string                 file_name,
 int fd;
 begin
     repeat(40)
-        @(posedge clk);
+        @(posedge cmac_clk);
     m_axis_tready = 1'b1;
     s_axis_tvalid = 1'b0;
     s_axis_tlast = 1'b0;
     repeat(3)
-        @(posedge clk);
+        @(posedge cmac_clk);
     
     fd = $fopen(file_name, "r");
     while(!$feof(fd))
@@ -326,16 +327,16 @@ begin
         if(s_axis_tkeep != 64'hffffffffffffffff)
         begin
             s_axis_tlast = 1'b1;
-            @(posedge clk);
+            @(posedge cmac_clk);
             s_axis_tvalid = 1'b0;
             s_axis_tlast = 1'b0;
             repeat(30)
-                @(posedge clk);
+                @(posedge cmac_clk);
         end
         else
         begin
             s_axis_tlast = 1'b0;
-            @(posedge clk);
+            @(posedge cmac_clk);
         end
     end
     $fclose(fd);
@@ -374,8 +375,9 @@ open_nic_shell #(
 )
 open_nic_shell_ins
 (
-	.axis_aclk(clk),		// axis clk
-	.axil_aclk(axil_clk),		// axis clk
+	.axis_aclk(clk),                // axis qdma clk
+	.cmac_clk(cmac_clk),            // axis cmac clk
+	.axil_aclk(axil_clk),           // axil clk
 	.powerup_rstn(aresetn),
 	.shell_rst_done(shell_rst_done),
 	.user_rst_done(user_rst_done),
