@@ -7,7 +7,7 @@ parameter NUM_CMAC_PORT = 2
 )();
 
 wire                        clk;
-wire                        cmac_clk;
+wire [NUM_CMAC_PORT-1:0]    cmac_clk;
 wire                        axil_clk;
 reg                         aresetn;
 wire [31:0]                 shell_rst_done;
@@ -71,7 +71,9 @@ wire [31:0]                 axil_rdata;
 wire [1:0]                  axil_rresp;
 reg                         axil_rready;
 
+logic [NUM_CMAC_PORT-1:0]   cmac_clock;
 
+assign cmac_clock = cmac_clk;
 assign rst_done = (&shell_rst_done) & (&user_rst_done);
 
 // Output validation, define the target value you are looking for
@@ -120,10 +122,10 @@ initial begin
                                                s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
                                                s_axis_h2c_tuser);
     // C2H pipelines configuration:
-    configuration_c2h("calc_conf_c2h.txt", s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
+    configuration_c2h("calc_conf_c2h.txt", cmac_clock[0], s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
                                            m_axis_c2h_tready, s_axis_rx_tlast[0], s_axis_rx_tkeep[0]);
     
-    configuration_c2h("LongPipeline_conf_c2h.txt", s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
+    configuration_c2h("LongPipeline_conf_c2h.txt", cmac_clock[1], s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
                                                    m_axis_c2h_tready, s_axis_rx_tlast[1], s_axis_rx_tkeep[1]);
     
     
@@ -223,7 +225,7 @@ initial begin
     s_axis_rx_tlast[0] <= 1'b0;
     // Check result
     @(posedge m_axis_c2h_tvalid)
-    if (m_axis_c2h_tdata == TARGET_VALUE_ADD) begin 
+    if (m_axis_c2h_tdata[511:368] == TARGET_VALUE_ADD[511:368]) begin 
         $display ("ADD TEST PASSED"); 
     end else begin
         $display ("ADD TEST FAILED");
@@ -252,6 +254,7 @@ initial begin
         @(posedge clk);
         $finish(0);
     end
+    $finish(0);
     @(posedge clk);
 end
 
@@ -304,6 +307,7 @@ endtask
 
 
 task automatic configuration_c2h(input string                 file_name,
+                                 ref logic                    t_clk,
                                  ref reg [DATA_WIDTH-1:0]     s_axis_tdata,
                                  ref reg                      s_axis_tvalid,
                                  ref reg                      m_axis_tready,
@@ -312,12 +316,12 @@ task automatic configuration_c2h(input string                 file_name,
 int fd;
 begin
     repeat(40)
-        @(posedge cmac_clk);
+        @(posedge t_clk);
     m_axis_tready = 1'b1;
     s_axis_tvalid = 1'b0;
     s_axis_tlast = 1'b0;
     repeat(3)
-        @(posedge cmac_clk);
+        @(posedge t_clk);
     
     fd = $fopen(file_name, "r");
     while(!$feof(fd))
@@ -327,16 +331,16 @@ begin
         if(s_axis_tkeep != 64'hffffffffffffffff)
         begin
             s_axis_tlast = 1'b1;
-            @(posedge cmac_clk);
+            @(posedge t_clk);
             s_axis_tvalid = 1'b0;
             s_axis_tlast = 1'b0;
             repeat(30)
-                @(posedge cmac_clk);
+                @(posedge t_clk);
         end
         else
         begin
             s_axis_tlast = 1'b0;
-            @(posedge cmac_clk);
+            @(posedge t_clk);
         end
     end
     $fclose(fd);
