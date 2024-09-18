@@ -20,7 +20,7 @@ menshen-open-nic/
 The build process consists on running a script that will clone the OpenNIC and Menshen repositories and patch the files necessary for building and testing the component on the OpenNIC platform.
 1. Clone the repo and enter the folder you just cloned
    ```sh
-   git clone https://github.com/AlessandroVacca/menshen-open-nic.git && cd menshen-open-nic
+   git clone https://github.com/FrancioT/menshenNIC.git && cd menshen-open-nic
    ```
 2. We used [Xilinx Application 1151 CAM](https://www.xilinx.com/member/forms/download/design-license.html?cid=154257&filename=xapp1151_Param_CAM.zip). 
    After downloading it and placing it in the "menshen-open-nic/" folder, run the following commands:
