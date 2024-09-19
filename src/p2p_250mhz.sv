@@ -252,7 +252,19 @@ module p2p_250mhz #(
       );
     end
     else begin
-      wire [47:0] axis_qdma_h2c_tuser;
+      wire [47:0]  axis_qdma_h2c_tuser;
+      wire [511:0] rx_bridge_axis_tdata;
+      wire [63:0]  rx_bridge_axis_tkeep;
+      wire [47:0]  rx_bridge_axis_tuser;
+      wire         rx_bridge_axis_tvalid;
+      wire         rx_bridge_axis_tready;
+      wire         rx_bridge_axis_tlast;
+      wire [511:0] rx_axis_tdata;
+      wire [63:0]  rx_axis_tkeep;
+      wire [47:0]  rx_axis_tuser;
+      wire         rx_axis_tvalid;
+      wire         rx_axis_tready;
+      wire         rx_axis_tlast; 
 
       assign axis_qdma_h2c_tuser[0+:16]                       = s_axis_qdma_h2c_tuser_size[`getvec(16, i)];
       assign axis_qdma_h2c_tuser[16+:16]                      = s_axis_qdma_h2c_tuser_src[`getvec(16, i)];
@@ -262,6 +274,7 @@ module p2p_250mhz #(
       assign m_axis_qdma_c2h_tuser_src[`getvec(16, i)]        = axis_qdma_c2h_tuser[16+:16];
       assign m_axis_qdma_c2h_tuser_dst[`getvec(16, i)]        = 16'h1 << i;
 
+      // menshen pipeline in tx (from qdma to cmac)
       rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) tx_ppl_inst (
         .clk(axis_aclk),		// axis clk
         .aresetn(axil_aresetn),	
@@ -283,17 +296,70 @@ module p2p_250mhz #(
         .m_axis_tlast(m_axis_adap_tx_250mhz_tlast[i])
       );
 
-      rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) rx_ppl_inst (
-        .clk(axis_aclk),		// axis clk
-        .aresetn(axil_aresetn),	
 
-        // input Slave AXI Stream
+      // menshen pipeline in rx (from cmac to qdma)
+      axi_stream_packet_buffer #( .TUSER_W(48)) rf_config_filter(
         .s_axis_tdata(s_axis_adap_rx_250mhz_tdata[`getvec(512, i)]),
         .s_axis_tkeep(s_axis_adap_rx_250mhz_tkeep[`getvec(64, i)]),
         .s_axis_tuser(axis_adap_rx_250mhz_tuser),
         .s_axis_tvalid(s_axis_adap_rx_250mhz_tvalid[i]),
         .s_axis_tready(s_axis_adap_rx_250mhz_tready[i]),
         .s_axis_tlast(s_axis_adap_rx_250mhz_tlast[i]),
+        .s_axis_tid(),
+        .s_axis_tdest(),
+
+        .drop((s_axis_adap_rx_250mhz_tdata[`getvec(512, i)])[335:320] == 16'hf2f1),
+        .drop_busy(),
+
+        .m_axis_tdata(rx_bridge_axis_tdata),
+        .m_axis_tkeep(rx_bridge_axis_tkeep),
+        .m_axis_tuser(rx_bridge_axis_tuser),
+        .m_axis_tvalid(rx_bridge_axis_tvalid),
+        .m_axis_tready(rx_bridge_axis_tready),
+        .m_axis_tlast(rx_bridge_axis_tlast),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser_size(),
+
+        .s_aclk(axis_aclk),
+        .s_aresetn(axil_aresetn),
+        .m_aclk(axis_aclk)
+      	
+      );
+      
+      always_comb
+      begin
+        if((s_axis_qdma_h2c_tdata[`getvec(512, i)])[335:320] == 16'hf3f1)
+        begin
+          rx_axis_tdata =  s_axis_qdma_h2c_tdata[`getvec(512, i)];
+          rx_axis_tkeep =  s_axis_qdma_h2c_tkeep[`getvec(64, i)];
+          rx_axis_tuser =  axis_qdma_h2c_tuser;
+          rx_axis_tvalid = s_axis_qdma_h2c_tvalid[i];
+          rx_axis_tready = s_axis_qdma_h2c_tready[i];
+          rx_axis_tlast =  s_axis_qdma_h2c_tlast[i];
+        end
+        else
+        begin
+          rx_axis_tdata =  rx_bridge_axis_tdata;
+          rx_axis_tkeep =  rx_bridge_axis_tkeep;
+          rx_axis_tuser =  rx_bridge_axis_tuser;
+          rx_axis_tvalid = rx_bridge_axis_tvalid;
+          rx_axis_tready = rx_bridge_axis_tready;
+          rx_axis_tlast =  rx_bridge_axis_tlast;
+        end
+      end
+
+      rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) rx_ppl_inst (
+        .clk(axis_aclk),		// axis clk
+        .aresetn(axil_aresetn),	
+
+        // input Slave AXI Stream
+        .s_axis_tdata(rx_axis_tdata),
+        .s_axis_tkeep(rx_axis_tkeep),
+        .s_axis_tuser(rx_axis_tuser),
+        .s_axis_tvalid(rx_axis_tvalid),
+        .s_axis_tready(rx_axis_tready),
+        .s_axis_tlast(rx_axis_tlast),
 
         // output Master AXI Stream
         .m_axis_tdata(m_axis_qdma_c2h_tdata[`getvec(512, i)]),

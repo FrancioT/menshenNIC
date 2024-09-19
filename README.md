@@ -20,7 +20,7 @@ menshen-open-nic/
 The build process consists on running a script that will clone the OpenNIC and Menshen repositories and patch the files necessary for building and testing the component on the OpenNIC platform.
 1. Clone the repo and enter the folder you just cloned
    ```sh
-   git clone https://github.com/FrancioT/menshenNIC.git && cd menshen-open-nic
+   git clone https://github.com/FrancioT/menshenNIC.git && cd menshenNIC
    ```
 2. We used [Xilinx Application 1151 CAM](https://www.xilinx.com/member/forms/download/design-license.html?cid=154257&filename=xapp1151_Param_CAM.zip). 
    After downloading it and placing it in the "menshen-open-nic/" folder, run the following commands:
@@ -39,7 +39,7 @@ The build process consists on running a script that will clone the OpenNIC and M
    ```
 5. In order to include the component inside OpenNIC you will need to build with this command, using Vivado 2022.1
    ```sh
-   cd path/to/menshen-open-nic/open-nic-shell/script
+   cd path/to/menshenNIC/open-nic-shell/script
    vivado -mode tcl -source build.tcl -tclargs -board au55c -num_cmac_port 2 -num_phys_func 2 -user_plugin ../../src
    ```
 ## Sidenotes
