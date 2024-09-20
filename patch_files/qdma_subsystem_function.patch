@@ -1,0 +1,18 @@
+@@ -53,7 +53,7 @@
+   output         m_axis_h2c_tlast,
+   output  [15:0] m_axis_h2c_tuser_size,
+   output  [15:0] m_axis_h2c_tuser_src,
+-  output  [15:0] m_axis_h2c_tuser_dst,
++  //output  [15:0] m_axis_h2c_tuser_dst,
+   input          m_axis_h2c_tready,
+ 
+   input          s_axis_c2h_tvalid,
+@@ -252,7 +252,7 @@
+   endgenerate
+ 
+   assign m_axis_h2c_tuser_src = 16'h1 << FUNC_ID;
+-  assign m_axis_h2c_tuser_dst = 0;
++  //assign m_axis_h2c_tuser_dst = 0;
+ 
+   // ==========
+   // RX path

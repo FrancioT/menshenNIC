@@ -22,6 +22,8 @@ git clone https://github.com/Xilinx/open-nic-shell.git
 patch open-nic-shell/script/build.tcl < patch_files/build.patch
 patch open-nic-shell/src/open_nic_shell.sv < patch_files/open_nic_shell.patch
 patch open-nic-shell/src/open_nic_shell_macros.vh < patch_files/open_nic_shell_macros.patch
+patch open-nic-shell/src/qdma_subsystem/qdma_subsystem.sv < patch_files/qdma_subsystem.patch
+patch open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv < patch_files/qdma_subsystem_function.patch
 realpath open-nic-tbs
 # ABS PATH PATCHES
 OS_TYPE=$(uname)

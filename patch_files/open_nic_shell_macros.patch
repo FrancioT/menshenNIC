@@ -1,5 +1,3 @@
---- ./open-nic-shell/src/open_nic_shell_macros.vh	2024-07-12 18:53:00
-+++ ./opennic_changes/open_nic_shell_macros.vh	2024-07-16 19:11:13
 @@ -22,3 +22,12 @@
  `define getvec(width, index)            ((index)*(width)) +: (width)
  

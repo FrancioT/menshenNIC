@@ -122,11 +122,13 @@ initial begin
                                                s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
                                                s_axis_h2c_tuser);
     // C2H pipelines configuration:
-    configuration_c2h("calc_conf_c2h.txt", cmac_clock[0], s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
-                                           m_axis_c2h_tready, s_axis_rx_tlast[0], s_axis_rx_tkeep[0]);
+    configuration_c2h("calc_conf_c2h.txt", 0, cmac_clock[0], s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
+                                           m_axis_c2h_tready, s_axis_rx_tlast[0], s_axis_rx_tkeep[0],
+                                           s_axis_h2c_tuser);
     
-    configuration_c2h("LongPipeline_conf_c2h.txt", cmac_clock[1], s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
-                                                   m_axis_c2h_tready, s_axis_rx_tlast[1], s_axis_rx_tkeep[1]);
+    configuration_c2h("LongPipeline_conf_c2h.txt", 1, cmac_clock[1], s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
+                                                   m_axis_c2h_tready, s_axis_rx_tlast[1], s_axis_rx_tkeep[1],
+                                                   s_axis_h2c_tuser);
     
     
     s_axis_h2c_tuser_qid = 0;
@@ -274,7 +276,7 @@ begin
         @(posedge clk);
     s_axis_tcrc = 32'b0;
     m_axis_tready = 1'b1;
-    s_axis_tuser = 32'h0000004A;
+    s_axis_tuser = 32'h00000000;
     s_axis_tvalid = 1'b0;
     s_axis_tlast = 1'b0;
     repeat(3)
@@ -307,17 +309,20 @@ endtask
 
 
 task automatic configuration_c2h(input string                 file_name,
+                                 input bit                    dest,
                                  ref logic                    t_clk,
                                  ref reg [DATA_WIDTH-1:0]     s_axis_tdata,
                                  ref reg                      s_axis_tvalid,
                                  ref reg                      m_axis_tready,
                                  ref reg                      s_axis_tlast,
-                                 ref reg [(DATA_WIDTH/8)-1:0] s_axis_tkeep);
+                                 ref reg [(DATA_WIDTH/8)-1:0] s_axis_tkeep,
+                                 ref reg [31:0]               s_axis_tuser);
 int fd;
 begin
     repeat(40)
         @(posedge t_clk);
     m_axis_tready = 1'b1;
+    s_axis_tuser = {1'b1, dest, {30{1'b0}}};
     s_axis_tvalid = 1'b0;
     s_axis_tlast = 1'b0;
     repeat(3)

@@ -264,7 +264,14 @@ module p2p_250mhz #(
       wire [47:0]  rx_axis_tuser;
       wire         rx_axis_tvalid;
       wire         rx_axis_tready;
-      wire         rx_axis_tlast; 
+      wire         rx_axis_tlast;
+      
+      wire [511:0] tx_bridge_axis_tdata;
+      wire [63:0]  tx_bridge_axis_tkeep;
+      wire [47:0]  tx_bridge_axis_tuser;
+      wire         tx_bridge_axis_tvalid;
+      wire         tx_bridge_axis_tready;
+      wire         tx_bridge_axis_tlast; 
 
       assign axis_qdma_h2c_tuser[0+:16]                       = s_axis_qdma_h2c_tuser_size[`getvec(16, i)];
       assign axis_qdma_h2c_tuser[16+:16]                      = s_axis_qdma_h2c_tuser_src[`getvec(16, i)];
@@ -275,17 +282,47 @@ module p2p_250mhz #(
       assign m_axis_qdma_c2h_tuser_dst[`getvec(16, i)]        = 16'h1 << i;
 
       // menshen pipeline in tx (from qdma to cmac)
-      rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) tx_ppl_inst (
-        .clk(axis_aclk),		// axis clk
-        .aresetn(axil_aresetn),	
-
-        // input Slave AXI Stream
+      // this buffer is used as a filter for the configuration packets reguarding the rx pipeline (which will be redirected to it) 
+      axi_stream_packet_buffer #( .TUSER_W(48)) rf_config_filter(
         .s_axis_tdata(s_axis_qdma_h2c_tdata[`getvec(512, i)]),
         .s_axis_tkeep(s_axis_qdma_h2c_tkeep[`getvec(64, i)]),
         .s_axis_tuser(axis_qdma_h2c_tuser),
         .s_axis_tvalid(s_axis_qdma_h2c_tvalid[i]),
         .s_axis_tready(s_axis_qdma_h2c_tready[i]),
         .s_axis_tlast(s_axis_qdma_h2c_tlast[i]),
+        .s_axis_tid(),
+        .s_axis_tdest(),
+
+        .drop(((s_axis_qdma_h2c_tdata[`getvec(512, i)])[335:320] == 16'hf2f1) && s_axis_qdma_h2c_tuser_dst[15] == 1),
+        .drop_busy(),
+
+        .m_axis_tdata(tx_bridge_axis_tdata),
+        .m_axis_tkeep(tx_bridge_axis_tkeep),
+        .m_axis_tuser(tx_bridge_axis_tuser),
+        .m_axis_tvalid(tx_bridge_axis_tvalid),
+        .m_axis_tready(tx_bridge_axis_tready),
+        .m_axis_tlast(tx_bridge_axis_tlast),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser_size(),
+
+        .s_aclk(axis_aclk),
+        .s_aresetn(axil_aresetn),
+        .m_aclk(axis_aclk)
+      	
+      );
+      
+      rmt_wrapper #( .NUM_OF_STAGES(PIPE_SIZE[i])) tx_ppl_inst (
+        .clk(axis_aclk),		// axis clk
+        .aresetn(axil_aresetn),	
+
+        // input Slave AXI Stream
+        .s_axis_tdata(tx_bridge_axis_tdata),
+        .s_axis_tkeep(tx_bridge_axis_tkeep),
+        .s_axis_tuser(tx_bridge_axis_tuser),
+        .s_axis_tvalid(tx_bridge_axis_tvalid),
+        .s_axis_tready(tx_bridge_axis_tready),
+        .s_axis_tlast(tx_bridge_axis_tlast),
 
         // output Master AXI Stream
         .m_axis_tdata(m_axis_adap_tx_250mhz_tdata[`getvec(512, i)]),
@@ -298,6 +335,7 @@ module p2p_250mhz #(
 
 
       // menshen pipeline in rx (from cmac to qdma)
+      // this buffer is used as a filter for the configuration packets arriving from the ethernet
       axi_stream_packet_buffer #( .TUSER_W(48)) rf_config_filter(
         .s_axis_tdata(s_axis_adap_rx_250mhz_tdata[`getvec(512, i)]),
         .s_axis_tkeep(s_axis_adap_rx_250mhz_tkeep[`getvec(64, i)]),
@@ -329,7 +367,7 @@ module p2p_250mhz #(
       
       always_comb
       begin
-        if((s_axis_qdma_h2c_tdata[`getvec(512, i)])[335:320] == 16'hf3f1)
+        if(s_axis_qdma_h2c_tuser_dst[15] == 1 && s_axis_qdma_h2c_tuser_dst[14] == i)
         begin
           rx_axis_tdata =  s_axis_qdma_h2c_tdata[`getvec(512, i)];
           rx_axis_tkeep =  s_axis_qdma_h2c_tkeep[`getvec(64, i)];
