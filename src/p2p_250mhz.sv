@@ -47,7 +47,7 @@ module p2p_250mhz #(
   input   [16*NUM_INTF*NUM_QDMA-1:0] s_axis_qdma_h2c_tuser_size,
   input   [16*NUM_INTF*NUM_QDMA-1:0] s_axis_qdma_h2c_tuser_src,
   input   [16*NUM_INTF*NUM_QDMA-1:0] s_axis_qdma_h2c_tuser_dst,
-  output     [NUM_INTF*NUM_QDMA-1:0] s_axis_qdma_h2c_tready,
+  output reg [NUM_INTF*NUM_QDMA-1:0] s_axis_qdma_h2c_tready,
 
   output     [NUM_INTF*NUM_QDMA-1:0] m_axis_qdma_c2h_tvalid,
   output [512*NUM_INTF*NUM_QDMA-1:0] m_axis_qdma_c2h_tdata,
@@ -253,25 +253,30 @@ module p2p_250mhz #(
     end
     else begin
       wire [47:0]  axis_qdma_h2c_tuser;
-      wire [511:0] rx_bridge_axis_tdata;
+      wire [511:0] rx_bridge_axis_tdata;   // rx and tx bridges connect the axis_stream_packet_buffers to their corresponding pipeline
       wire [63:0]  rx_bridge_axis_tkeep;
       wire [47:0]  rx_bridge_axis_tuser;
       wire         rx_bridge_axis_tvalid;
-      wire         rx_bridge_axis_tready;
+      reg          rx_bridge_axis_tready;
       wire         rx_bridge_axis_tlast;
-      wire [511:0] rx_axis_tdata;
-      wire [63:0]  rx_axis_tkeep;
-      wire [47:0]  rx_axis_tuser;
-      wire         rx_axis_tvalid;
+      wire [511:0] rx_drop_channel;
+      reg [511:0]  rx_axis_tdata;          // those registers are used to connect the rx pipeline to either rx-adapter or h2c (in case we are configuring the rx pipeline)
+      reg [63:0]   rx_axis_tkeep;
+      reg [47:0]   rx_axis_tuser;
+      reg          rx_axis_tvalid;
       wire         rx_axis_tready;
-      wire         rx_axis_tlast;
+      reg          rx_axis_tlast;
       
       wire [511:0] tx_bridge_axis_tdata;
       wire [63:0]  tx_bridge_axis_tkeep;
       wire [47:0]  tx_bridge_axis_tuser;
       wire         tx_bridge_axis_tvalid;
       wire         tx_bridge_axis_tready;
-      wire         tx_bridge_axis_tlast; 
+      wire         tx_bridge_axis_tlast;
+      wire [511:0] tx_drop_channel; 
+      wire         tx_axis_tready;
+      
+      reg drop_rx;
 
       assign axis_qdma_h2c_tuser[0+:16]                       = s_axis_qdma_h2c_tuser_size[`getvec(16, i)];
       assign axis_qdma_h2c_tuser[16+:16]                      = s_axis_qdma_h2c_tuser_src[`getvec(16, i)];
@@ -282,18 +287,20 @@ module p2p_250mhz #(
       assign m_axis_qdma_c2h_tuser_dst[`getvec(16, i)]        = 16'h1 << i;
 
       // menshen pipeline in tx (from qdma to cmac)
+      assign tx_drop_channel = s_axis_qdma_h2c_tdata[`getvec(512, i)];
+      
       // this buffer is used as a filter for the configuration packets reguarding the rx pipeline (which will be redirected to it) 
-      axi_stream_packet_buffer #( .TUSER_W(48)) rf_config_filter(
+      axi_stream_packet_buffer #( .TUSER_W(48)) tx_config_filter(
         .s_axis_tdata(s_axis_qdma_h2c_tdata[`getvec(512, i)]),
         .s_axis_tkeep(s_axis_qdma_h2c_tkeep[`getvec(64, i)]),
         .s_axis_tuser(axis_qdma_h2c_tuser),
         .s_axis_tvalid(s_axis_qdma_h2c_tvalid[i]),
-        .s_axis_tready(s_axis_qdma_h2c_tready[i]),
+        .s_axis_tready(tx_axis_tready),
         .s_axis_tlast(s_axis_qdma_h2c_tlast[i]),
         .s_axis_tid(),
         .s_axis_tdest(),
 
-        .drop(((s_axis_qdma_h2c_tdata[`getvec(512, i)])[335:320] == 16'hf2f1) && s_axis_qdma_h2c_tuser_dst[15] == 1),
+        .drop((tx_drop_channel[335:320] == 16'hf2f1) && s_axis_qdma_h2c_tuser_dst[15] == 1),
         .drop_busy(),
 
         .m_axis_tdata(tx_bridge_axis_tdata),
@@ -335,8 +342,10 @@ module p2p_250mhz #(
 
 
       // menshen pipeline in rx (from cmac to qdma)
+      assign rx_drop_channel = s_axis_adap_rx_250mhz_tdata[`getvec(512, i)];
+      
       // this buffer is used as a filter for the configuration packets arriving from the ethernet
-      axi_stream_packet_buffer #( .TUSER_W(48)) rf_config_filter(
+      axi_stream_packet_buffer #( .TUSER_W(48)) rx_config_filter(
         .s_axis_tdata(s_axis_adap_rx_250mhz_tdata[`getvec(512, i)]),
         .s_axis_tkeep(s_axis_adap_rx_250mhz_tkeep[`getvec(64, i)]),
         .s_axis_tuser(axis_adap_rx_250mhz_tuser),
@@ -346,7 +355,7 @@ module p2p_250mhz #(
         .s_axis_tid(),
         .s_axis_tdest(),
 
-        .drop((s_axis_adap_rx_250mhz_tdata[`getvec(512, i)])[335:320] == 16'hf2f1),
+        .drop((rx_drop_channel[335:320] == 16'hf2f1) || drop_rx),
         .drop_busy(),
 
         .m_axis_tdata(rx_bridge_axis_tdata),
@@ -365,6 +374,7 @@ module p2p_250mhz #(
       	
       );
       
+      // multiplexer used to connect the rx pipeline to either rx-adapter or h2c (in case we are configuring the rx pipeline)
       always_comb
       begin
         if(s_axis_qdma_h2c_tuser_dst[15] == 1 && s_axis_qdma_h2c_tuser_dst[14] == i)
@@ -373,8 +383,10 @@ module p2p_250mhz #(
           rx_axis_tkeep =  s_axis_qdma_h2c_tkeep[`getvec(64, i)];
           rx_axis_tuser =  axis_qdma_h2c_tuser;
           rx_axis_tvalid = s_axis_qdma_h2c_tvalid[i];
-          rx_axis_tready = s_axis_qdma_h2c_tready[i];
           rx_axis_tlast =  s_axis_qdma_h2c_tlast[i];
+          s_axis_qdma_h2c_tready[i] = rx_axis_tready;
+          rx_bridge_axis_tready = 1;
+          drop_rx = 1;
         end
         else
         begin
@@ -382,8 +394,10 @@ module p2p_250mhz #(
           rx_axis_tkeep =  rx_bridge_axis_tkeep;
           rx_axis_tuser =  rx_bridge_axis_tuser;
           rx_axis_tvalid = rx_bridge_axis_tvalid;
-          rx_axis_tready = rx_bridge_axis_tready;
           rx_axis_tlast =  rx_bridge_axis_tlast;
+          s_axis_qdma_h2c_tready[i] = tx_axis_tready;
+          rx_bridge_axis_tready = rx_axis_tready;
+          drop_rx = 0;
         end
       end
 
