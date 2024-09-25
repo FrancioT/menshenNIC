@@ -123,10 +123,11 @@ initial begin
                                                     s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
                                                     s_axis_h2c_tuser);
     // C2H pipelines configuration:
+    s_axis_h2c_tuser_qid = 0;
     configuration("calc_conf.txt", "rx", 0, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[0],
                                             s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
                                             s_axis_h2c_tuser);
-    
+    s_axis_h2c_tuser_qid = 2;
     configuration("LongPipeline_conf.txt", "rx", 1, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[1],
                                                     s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
                                                     s_axis_h2c_tuser);
