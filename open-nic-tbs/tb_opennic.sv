@@ -89,6 +89,7 @@ initial begin
     s_axis_h2c_tuser_zero_byte = 0;
     s_axis_h2c_tuser_port_id = 0;
     s_axis_rx_tuser_err = 0;
+    m_axis_c2h_tready = 1;
     
     axil_awvalid <= 0;
     axil_awaddr <= 0;
@@ -114,21 +115,21 @@ initial begin
     register_setup(32'h00001000, 32'h00000001);
     register_setup(32'h00002000, 32'h00020001);
     s_axis_h2c_tuser_qid = 0;
-    configuration_h2c("calc_conf.txt", s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[0], 
-                                       s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
-                                       s_axis_h2c_tuser);
+    configuration("calc_conf.txt", "tx", 0, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[0],
+                                            s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
+                                            s_axis_h2c_tuser);
     s_axis_h2c_tuser_qid = 2;
-    configuration_h2c("LongPipeline_conf.txt", s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[1], 
-                                               s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
-                                               s_axis_h2c_tuser);
+    configuration("LongPipeline_conf.txt", "tx", 0, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[1],
+                                                    s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
+                                                    s_axis_h2c_tuser);
     // C2H pipelines configuration:
-    configuration_c2h("calc_conf_c2h.txt", 0, cmac_clock[0], s_axis_rx_tdata[0], s_axis_rx_tvalid[0], 
-                                           m_axis_c2h_tready, s_axis_rx_tlast[0], s_axis_rx_tkeep[0],
-                                           s_axis_h2c_tuser);
+    configuration("calc_conf.txt", "rx", 0, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[0],
+                                            s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
+                                            s_axis_h2c_tuser);
     
-    configuration_c2h("LongPipeline_conf_c2h.txt", 1, cmac_clock[1], s_axis_rx_tdata[1], s_axis_rx_tvalid[1], 
-                                                   m_axis_c2h_tready, s_axis_rx_tlast[1], s_axis_rx_tkeep[1],
-                                                   s_axis_h2c_tuser);
+    configuration("LongPipeline_conf.txt", "rx", 1, s_axis_h2c_tdata, s_axis_h2c_tvalid, m_axis_tx_tready[1],
+                                                    s_axis_h2c_tlast, s_axis_h2c_tuser_mty, s_axis_h2c_tcrc,
+                                                    s_axis_h2c_tuser);
     
     
     s_axis_h2c_tuser_qid = 0;
@@ -196,12 +197,12 @@ initial begin
     
     // some time has passed   
     repeat(100)
-        @(posedge clk);
+        @(posedge cmac_clock[0]);
     s_axis_rx_tdata[0] <= 512'h000000000000000002000000030000001a004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
     s_axis_rx_tkeep[0] <= 64'hffffffffffffffff;
     s_axis_rx_tvalid[0] <= 1'b1;
     s_axis_rx_tlast[0] <= 1'b1;
-    @(posedge clk);
+    @(posedge cmac_clock[0]);
     s_axis_rx_tvalid[0] <= 1'b0;
     s_axis_rx_tlast[0] <= 1'b0;
     // Check result
@@ -211,18 +212,18 @@ initial begin
     end else begin
         $display ("SUB TEST FAILED");
         $display("%h", m_axis_c2h_tdata);
-        @(posedge clk);
+        @(posedge cmac_clock[0]);
         $finish(0);
     end
     
     // some time has passed   
     repeat(100)
-        @(posedge clk);
+        @(posedge cmac_clock[0]);
     s_axis_rx_tdata[0] <= 512'h000000000000000002000000030000000d00594d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
     s_axis_rx_tkeep[0] <= 64'hffffffffffffffff;
     s_axis_rx_tvalid[0] <= 1'b1;
     s_axis_rx_tlast[0] <= 1'b1;
-    @(posedge clk);
+    @(posedge cmac_clock[0]);
     s_axis_rx_tvalid[0] <= 1'b0;
     s_axis_rx_tlast[0] <= 1'b0;
     // Check result
@@ -232,18 +233,18 @@ initial begin
     end else begin
         $display ("ADD TEST FAILED");
         $display("%h", m_axis_c2h_tdata);
-        @(posedge clk);
+        @(posedge cmac_clock[0]);
         $finish(0);
     end
     
     // some time has passed   
     repeat(100)
-        @(posedge clk);
+        @(posedge cmac_clock[1]);
     s_axis_rx_tdata[1] <= 512'h0000000028000000020000000000000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;	
     s_axis_rx_tkeep[1] <= 64'hffffffffffffffff;
     s_axis_rx_tvalid[1] <= 1'b1;
     s_axis_rx_tlast[1] <= 1'b1;
-    @(posedge clk);
+    @(posedge cmac_clock[1]);
     s_axis_rx_tvalid[1] <= 1'b0;
     s_axis_rx_tlast[1] <= 1'b0;
     // Check result
@@ -253,30 +254,35 @@ initial begin
     end else begin
         $display ("STAGES TEST FAILED");
         $display("%h", m_axis_c2h_tdata);
-        @(posedge clk);
+        @(posedge cmac_clock[1]);
         $finish(0);
     end
     $finish(0);
-    @(posedge clk);
+    @(posedge cmac_clock[1]);
 end
 
 
 // Tasks:
-task automatic configuration_h2c(input string             file_name,
-                                 ref reg [DATA_WIDTH-1:0] s_axis_tdata,
-                                 ref reg                  s_axis_tvalid,
-                                 ref reg                  m_axis_tready,
-                                 ref reg                  s_axis_tlast,
-                                 ref reg [5:0]            s_axis_tuser_mty,
-                                 ref reg [31:0]           s_axis_tcrc,
-                                 ref reg [31:0]           s_axis_tuser);
+task automatic configuration(input string             file_name,
+                             input string             direction,
+                             input bit                dest,
+                             ref reg [DATA_WIDTH-1:0] s_axis_tdata,
+                             ref reg                  s_axis_tvalid,
+                             ref reg                  m_axis_tready,
+                             ref reg                  s_axis_tlast,
+                             ref reg [5:0]            s_axis_tuser_mty,
+                             ref reg [31:0]           s_axis_tcrc,
+                             ref reg [31:0]           s_axis_tuser);
 int fd;
 begin
     repeat(40)
         @(posedge clk);
     s_axis_tcrc = 32'b0;
     m_axis_tready = 1'b1;
-    s_axis_tuser = 32'h00000000;
+    if(direction == "tx")
+        s_axis_tuser = 32'h00000000;
+    else
+        s_axis_tuser = {1'b1, dest, {30{1'b0}}};
     s_axis_tvalid = 1'b0;
     s_axis_tlast = 1'b0;
     repeat(3)
@@ -303,13 +309,13 @@ begin
             @(posedge clk);
         end
     end
+    s_axis_tuser = 32'h00000000;
     $fclose(fd);
 end
 endtask
 
-
+/*
 task automatic configuration_c2h(input string                 file_name,
-                                 input bit                    dest,
                                  ref logic                    t_clk,
                                  ref reg [DATA_WIDTH-1:0]     s_axis_tdata,
                                  ref reg                      s_axis_tvalid,
@@ -322,7 +328,7 @@ begin
     repeat(40)
         @(posedge t_clk);
     m_axis_tready = 1'b1;
-    s_axis_tuser = {1'b1, dest, {30{1'b0}}};
+    s_axis_tuser = 32'h00000000;
     s_axis_tvalid = 1'b0;
     s_axis_tlast = 1'b0;
     repeat(3)
@@ -351,6 +357,7 @@ begin
     $fclose(fd);
 end
 endtask
+*/
 
 
 task register_setup(input [31:0] reg_addr, reg_val);

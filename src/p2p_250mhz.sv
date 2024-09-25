@@ -355,7 +355,7 @@ module p2p_250mhz #(
         .s_axis_tid(),
         .s_axis_tdest(),
 
-        .drop((rx_drop_channel[335:320] == 16'hf2f1) || drop_rx),
+        .drop((rx_drop_channel[335:320] == 16'hf2f1) || (drop_rx && s_axis_adap_rx_250mhz_tlast[i])),
         .drop_busy(),
 
         .m_axis_tdata(rx_bridge_axis_tdata),

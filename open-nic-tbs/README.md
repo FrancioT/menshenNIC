@@ -7,5 +7,8 @@ This folder contains:
 
 ## Conf_packets_generation.py
 To create a correct configuration file, copy the desired p4 compiled testbench folder in this directory and rename it to "p4_generted".
-After doing so execute the python script passing as argument the direction of the pipeline to be reconfigured (the 2 arguments accepted are **c2h** and **h2c**).
-
+After doing so execute the python script passing as argument the number of programs instantiated of the menshen pipeline and the type of packet's length signal of the axi stream protocol (the 2 arguments accepted are **tkeep** and **tuser_mty**, the default is tuser_mty).
+Example: 
+```sh
+python3 conf_packets_generation.py 1
+```
