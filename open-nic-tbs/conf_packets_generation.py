@@ -55,7 +55,7 @@ def big_endian(hex_value):
 def pad_left_string_zeros(old_string, factor):
 	return ("0"*(factor-len(old_string)+(len(old_string)//factor)*factor) + old_string) if len(old_string)%factor != 0 else old_string
 
-def output_to_file(file_name, direction):
+def output_to_file(file_name, len_type):
 	parsed_file = parse_configuration(file_name)
 	#print("// "+file_name.split("/")[-1] + ":")
 	for chunk in parsed_file:
@@ -77,7 +77,7 @@ def output_to_file(file_name, direction):
 		for_range = len(data_signal)//128
 		for i in range(0, for_range):
 			print(data_signal[-i*128-128:len(data_signal)-i*128])
-			if direction == "c2h":
+			if len_type == "tkeep":
 				print(keep_signal[-i*16-16:len(keep_signal)-i*16])
 			else:
 				if i!=for_range-1:
@@ -87,23 +87,24 @@ def output_to_file(file_name, direction):
 					print(format(crc_calc.checksum(bytes(chunk)), "032b")+"\n")
 
 
-
-if len(sys.argv)<2:
-	raise Exception("Error, you must choose a direction!\nPass as argument to the program \"h2c\" or \"c2h\"")
-if sys.argv[1] == "h2c":
+programs_num = 1
+if len(sys.argv)>1:
+	programs_num = int(sys.argv[1])
+len_signal = ""
+if len(sys.argv)<3:
 	sys.stdout = open("conf_packets.txt",'w')
-elif sys.argv[1] == "c2h":
+elif sys.argv[2] == "tkeep":
 	sys.stdout = open("conf_packets_c2h.txt",'w')
+	len_signal = sys.argv[2]
 else:
-	raise Exception("Error, unknown direction!\nPass as argument to the program \"h2c\" or \"c2h\"")
+	raise Exception("Error, unknown \"" + sys.argv[2] + "\" parameter!\nIf you want to generate packets with keep signal use \"tkeep\" as parameter")
 crc_calc = Calculator(Crc32.CRC32)
 
 # CONFIGURATION PACKETS
-output_to_file("p4_generated/conf1.txt", sys.argv[1])
-#output_to_file("p4_generated/conf2.txt", sys.argv[1])
-#output_to_file("p4_generated/conf3.txt", sys.argv[1])
-#output_to_file("p4_generated/confsys.txt", sys.argv[1])
-output_to_file("p4_generated/stateconf.txt", sys.argv[1])
+for i in range(1, programs_num+1):
+	output_to_file("p4_generated/conf" + str(i) + ".txt", len_signal)
+#output_to_file("p4_generated/confsys.txt", len_signal)
+output_to_file("p4_generated/stateconf.txt", len_signal)
 
 
 
