@@ -10,7 +10,6 @@
 +
 +set_property SOURCE_SET sources_1 [get_filesets sim_1]
 +add_files -fileset sim_1 -norecurse {{VAR}}/bd_7485_lmb_bram_0.mem {{VAR}}/bd_7485_reg_map_bram_0.mem
-+add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_addSub.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_drop.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_modules.sv
