@@ -5,7 +5,7 @@ You can read Menshen's paper and learn about the project [here](https://www.usen
 
 The integration consists in the development of an OpenNIC 250MHz user plugin box (see OpenNIC's architecture) that wraps Menshen's pipeline inside. The project also comes with the testbenches to verify that all of the pipeline features properly work.
 ## Directory structure
- ```sh
+```sh
 menshen-open-nic/
 ├── src/                        # OpenNIC user plugin template, accordingly patched for 
 │                               # the architecture of Menshen
@@ -42,6 +42,11 @@ The build process consists on running a script that will clone the OpenNIC and M
    cd path/to/menshenNIC/open-nic-shell/script
    vivado -mode tcl -source build.tcl -tclargs -board au55c -num_cmac_port 2 -num_phys_func 2 -user_plugin ../../src
    ```
+
+To build a version which uses the filter in the rx direction (see [image](./resources/rx_filter.png)) add the parameter "rx_filter" to the command:
+```sh
+./menshen-open-nic.sh rx_filter
+```
 ## Sidenotes
 The port has only been built and tested on an Alveo U55C board, therefore support on other Alveo boards isn't guaranteed.
 

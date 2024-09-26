@@ -16,6 +16,8 @@
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_modules.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_stages.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_morePipelines.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_rx_filter.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_no_rx_filter.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/configurations/modules_conf.txt {{VAR}}/configurations/LongPipeline_conf.txt {{VAR}}/configurations/calc_conf.txt {{VAR}}/configurations/drop_conf.txt {{VAR}}/configurations/stages_conf.txt {{VAR}}/configurations/calc_conf_c2h.txt {{VAR}}/configurations/LongPipeline_conf_c2h.txt
 +set_property top tb_opennic [get_filesets sim_1]
 +set_property top_lib xil_defaultlib [get_filesets sim_1]
