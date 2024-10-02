@@ -1,7 +1,7 @@
 
 `timescale 1ns / 1ps
 
-module tb_opennic #(
+module tb_opennic_no_rx_filter #(
 parameter DATA_WIDTH=512,
 parameter NUM_CMAC_PORT = 2
 )();

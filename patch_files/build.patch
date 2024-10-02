@@ -1,4 +1,4 @@
-@@ -451,3 +451,18 @@
+@@ -451,3 +451,22 @@
  if {$post_impl} {
      _do_post_impl $top_build_dir $top impl_1 $zynq_family ${board}
  }
@@ -18,6 +18,6 @@
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_rx_filter.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_no_rx_filter.sv
 +add_files -fileset sim_1 -norecurse {{VAR}}/configurations/modules_conf.txt {{VAR}}/configurations/LongPipeline_conf.txt {{VAR}}/configurations/calc_conf.txt {{VAR}}/configurations/drop_conf.txt {{VAR}}/configurations/stages_conf.txt {{VAR}}/configurations/calc_conf_c2h.txt {{VAR}}/configurations/LongPipeline_conf_c2h.txt
-+set_property top tb_opennic [get_filesets sim_1]
++set_property top {{TOP_TB}} [get_filesets sim_1]
 +set_property top_lib xil_defaultlib [get_filesets sim_1]
 +update_compile_order -fileset sim_1
