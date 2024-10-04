@@ -9,60 +9,43 @@
  * Standard ethernet header 
  */
 header ethernet_t {
-    bit<48> eth_dst_addr;
-    bit<48> eth_src_addr;
-    bit<16> eth_ethertype;
+        bit<48> eth_dst_addr;
+        bit<48> eth_src_addr;
+        bit<16> eth_ethertype;
 }
 
 header vlan_t {
-	bit<16> vlan_id;
-	bit<16> vlan_ethertype;
+        bit<16> vlan_id;
+        bit<16> vlan_ethertype;
 }
 
 header ipv4_t {
-    bit<4>  version;
-    bit<4>  ihl;
-    bit<8>  diffserv;
-    bit<16> total_len;
-    bit<16> identification;
-    bit<3>  flags;
-    bit<13> frag_offset;
-    bit<8>  ttl;
-    bit<8>  protocol;
-    bit<16> ip_checksum;
-    bit<32> ip_src_addr;
-    bit<32> ip_dst_addr;
+        bit<4>  version;
+        bit<4>  ihl;
+        bit<8>  diffserv;
+        bit<16> total_len;
+        bit<16> identification;
+        bit<3>  flags;
+        bit<13> frag_offset;
+        bit<8>  ttl;
+        bit<8>  protocol;
+        bit<16> ip_checksum;
+        bit<32> ip_src_addr;
+        bit<32> ip_dst_addr;
 }
 
 header udp_t {
-	bit<16> udp_src_port;
-    bit<16> udp_dst_port;
-    bit<16> hdr_length;
-    bit<16> udp_checksum;
+        bit<16> udp_src_port;
+        bit<16> udp_dst_port;
+        bit<16> hdr_length;
+        bit<16> udp_checksum;
 }
 
-/*
- * This is a custom protocol header for the calculator. We'll use 
- * ethertype 0x1234 for is (see parser)
- */
-const bit<16> P4CALC_ETYPE = 0x1234;
-const bit<8>  P4CALC_P     = 0x50;   // 'P'
-const bit<8>  P4CALC_4     = 0x34;   // '4'
-const bit<8>  P4CALC_VER   = 0x01;   // v0.1
-const bit<16>  P4CALC_PLUS  = 0x2b;   // '+'
-const bit<16>  P4CALC_MINUS = 0x2d;   // '-'
-const bit<16>  P4CALC_AND   = 0x26;   // '&'
-const bit<16>  P4CALC_OR    = 0x7c;   // '|'
-const bit<16>  P4CALC_CARET = 0x5e;   // '^'
-
 header p4calc_t {
-    // bit<8>  p;
-    // bit<8>  four;
-    // bit<8>  ver;
-    bit<16>  op;
-    bit<32> operand_a;
-    bit<32> operand_b;
-    bit<32> res;
+        bit<16>  op;
+        bit<32> operand_a;
+        bit<32> operand_b;
+        bit<32> res;
 }
 
 /*
@@ -71,11 +54,11 @@ header p4calc_t {
  * because it is done "by the architecture", i.e. outside of P4 functions
  */
 struct headers {
-    ethernet_t   ethernet;
-	vlan_t       vlan;
-	ipv4_t		 ipv4;
-	udp_t        udp;
-    p4calc_t     p4calc;
+        ethernet_t      ethernet;
+        vlan_t          vlan;
+        ipv4_t          ipv4;
+        udp_t           udp;
+        p4calc_t        p4calc;
 }
 
 /*
@@ -97,30 +80,30 @@ parser MyParser(packet_in packet,
                 inout metadata meta,
                 inout standard_metadata_t standard_metadata) {
 
-    state start {
-        packet.extract(hdr.ethernet);
-		transition parse_vlan;
-    }
+        state start {
+                packet.extract(hdr.ethernet);
+                transition parse_vlan;
+        }
 
-	state parse_vlan {
-		packet.extract(hdr.vlan);
-		transition parse_ip;
-	}
+        state parse_vlan {
+                packet.extract(hdr.vlan);
+                transition parse_ip;
+        }
 
-	state parse_ip {
-		packet.extract(hdr.ipv4);
-		transition parse_udp;
-	}
+        state parse_ip {
+                packet.extract(hdr.ipv4);
+                transition parse_udp;
+        }
 
-	state parse_udp {
-		packet.extract(hdr.udp);
-		transition parse_custom;
-	}
+        state parse_udp {
+                packet.extract(hdr.udp);
+                transition parse_custom;
+        }
     
-    state parse_custom {
-        packet.extract(hdr.p4calc);
-        transition accept;
-    }
+        state parse_custom {
+                packet.extract(hdr.p4calc);
+                transition accept;
+        }
 }
 
 /*************************************************************************
@@ -155,7 +138,7 @@ control MyIngress(inout headers hdr,
         actions = {
             operation_add_a;
             operation_sub_a;
-			nothing;
+                        nothing;
         }
         const default_action = nothing();
         const entries = {
@@ -165,13 +148,13 @@ control MyIngress(inout headers hdr,
     }
     
     table second {
-    	key = {
-    		hdr.p4calc.res : exact;
-    	}
-    	actions = {
+            key = {
+                    hdr.p4calc.res : exact;
+            }
+            actions = {
             operation_add_b;
             operation_sub_b;
-			nothing;
+                        nothing;
         }
         const default_action = nothing();
         const entries = {
@@ -181,59 +164,59 @@ control MyIngress(inout headers hdr,
     }
     
     table third {
-    	key = {
-    		hdr.p4calc.res : exact;
-    	}
-    	actions = {
+            key = {
+                    hdr.p4calc.res : exact;
+            }
+            actions = {
             operation_add_a;
             operation_sub_a;
-			nothing;
+                        nothing;
         }
         const default_action = nothing();
         const entries = {
             55: operation_add_a();
-         	25: operation_sub_a();
+                 25: operation_sub_a();
         }
     }
 
     table fourth {
-    	key = {
-    		hdr.p4calc.res : exact;
-    	}
-    	actions = {
+            key = {
+                    hdr.p4calc.res : exact;
+            }
+            actions = {
             operation_add_b;
             operation_sub_b;
-			nothing;
+                        nothing;
         }
         const default_action = nothing();
         const entries = {
             65: operation_add_b();
-            15	: operation_sub_b();
+            15        : operation_sub_b();
         }
     }
 
     table fifth {
-    	key = {
-    		hdr.p4calc.res : exact;
-    	}
-    	actions = {
+            key = {
+                    hdr.p4calc.res : exact;
+            }
+            actions = {
             operation_add_a;
             operation_sub_a;
-			nothing;
+                        nothing;
         }
         const default_action = nothing();
         const entries = {
             70: operation_add_a();
-         	10: operation_sub_a();
+                 10: operation_sub_a();
         }
     }
             
     apply {
         first.apply();
-    	second.apply();
-    	third.apply();
-    	fourth.apply();
-    	fifth.apply();
+            second.apply();
+            third.apply();
+            fourth.apply();
+            fifth.apply();
     } 
 }
 
