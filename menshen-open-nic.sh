@@ -1,3 +1,10 @@
+# CHECK DEPENDENCIES
+DEP_NAME=$(ls)
+if [[ $DEP_NAME != *"xilinx_cam"* ]]; then
+	echo "ERROR: no \"xilinx_cam\" folder found!"
+	exit
+fi
+
 # MENSHEN
 [ -d "menshen" ] && rm -rf "menshen"
 [ -d "rmtv2" ] && rm -rf "rmtv2"
@@ -22,17 +29,18 @@ git clone https://github.com/Xilinx/open-nic-shell.git
 patch open-nic-shell/script/build.tcl < patch_files/build.patch
 patch open-nic-shell/src/open_nic_shell.sv < patch_files/open_nic_shell.patch
 patch open-nic-shell/src/open_nic_shell_macros.vh < patch_files/open_nic_shell_macros.patch
-TOP_TB="tb_opennic_no_rx_filter.sv"
+TOP_TB="tb_opennic_no_rx_filter"
 filter_flag="rx_filter"
 if [[ "$1" == "$filter_flag" ]];
 then
         patch open-nic-shell/src/qdma_subsystem/qdma_subsystem.sv < patch_files/qdma_subsystem.patch
         patch open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv < patch_files/qdma_subsystem_function.patch
         patch src/p2p_250mhz.sv < patch_files/p2p_250mhz.patch
-        TOP_TB="tb_opennic_rx_filter.sv"
+        TOP_TB="tb_opennic_rx_filter"
 fi
-sed "s/set_property top {{TOP_TB}}/set_property top ${TOP_TB}/" open-nic-shell/script/build.tcl
+sed -i "s/set_property top {{TOP_TB}}/set_property top ${TOP_TB}/" open-nic-shell/script/build.tcl
 realpath open-nic-tbs
+
 # ABS PATH PATCHES
 VAR=$(realpath open-nic-tbs)
 sed -i "s|{{VAR}}|${VAR}|g" "open-nic-shell/script/build.tcl"
