@@ -42,12 +42,18 @@
  `ifdef __au55n__
    wire                         ref_clk_100mhz;
  `elsif __au55c__
-@@ -440,8 +446,6 @@
+@@ -440,7 +446,13 @@
    wire                         ref_clk_100mhz;
  `endif
  
 -  wire     [NUM_CMAC_PORT-1:0] cmac_clk;
--
++`ifdef __synthesis__
++  wire    [NUM_QDMA-1:0] axis_aclk;
++  wire    [NUM_CMAC_PORT-1:0] cmac_clk;
++  wire    [NUM_QDMA-1:0] axil_aclk;
++  wire    [31:0] shell_rst_done;
++  wire    [31:0] user_rst_done;
++`endif
+ 
    // Unused reset pairs must have their "reset_done" tied to 1
  
-   // First 4-bit for QDMA subsystem
